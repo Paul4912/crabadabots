@@ -3,6 +3,7 @@ dotEnvConfig()
 
 import { HardhatUserConfig } from "hardhat/types"
 import "@nomiclabs/hardhat-waffle"
+import "@typechain/hardhat"
 
 const ALCHEMY_API_TESTNET_URL = process.env.ALCHEMY_API_TESTNET_URL || ""
 const ALCHEMY_API_MAINNET_URL = process.env.ALCHEMY_API_MAINNET_URL || ""
