@@ -10,8 +10,7 @@ import {
     TeamData,
     TavernData,
     getTeamsUrl,
-    tavernUrlCheapest,
-    lootingUrl
+    tavernUrl
 } from "./CrabadaApi"
 
 
@@ -44,7 +43,7 @@ async function main() {
                     miningTrans.wait()
                     console.log("mining successful for team: " + team.team_id)
                 } else if((team.game_round == 0 && team.process_status == "attack") || team.game_round == 2) { // Team requires reinforcing
-                    await axios.get(tavernUrlCheapest)
+                    await axios.get(tavernUrl)
                     .then(response => {
                         tavernData = response.data.result.data
                     })
