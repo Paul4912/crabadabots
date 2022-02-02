@@ -1,31 +1,27 @@
+import { config as dotEnvConfig } from "dotenv"
+dotEnvConfig()
 import { ethers } from "hardhat"
 import axios from "axios"
 import {
     CrabadaGame,
     CrabadaGame__factory
 } from "../typechain"
+import {
+    TeamData,
+    TavernData,
+    getTeamsUrl,
+    tavernUrl
+} from "./CrabadaApi"
 
-type teamData = {
-    team_id: number,
-    game_id: number,
-    game_end_time: number,
-    game_round: number,
-    process_status: string,
-    status: string
-}
-
-type tavernData = {
-    crabada_id: number,
-    price: BigInt
-}
 
 async function main() {
     const [myWallet, ...accounts] = await ethers.getSigners()
     const gameAddress = "0x82a85407BD612f52577909F4A58bfC6873f14DA8"
+    const walletAddress = process.env.ADDRESS ? process.env.ADDRESS : ''
     const gameContract = new ethers.Contract(gameAddress, CrabadaGame__factory.abi).connect(myWallet) as CrabadaGame
 
-    let teamData: teamData[] = []
-    let tavernData: tavernData[] = []
+    let teamData: TeamData[] = []
+    let tavernData: TavernData[] = []
     let tavernPriceLimit = BigInt(30000000000000000000) // 30 tus. 18 decimals
 
     while(true) {
@@ -35,7 +31,7 @@ async function main() {
             const blockBefore = await ethers.provider.getBlock(blockNumBefore);
             const lastTimestamp = blockBefore.timestamp;
 
-            await axios.get('https://idle-api.crabada.com/public/idle/teams?user_address=0x4f99949cc732f6c19ca58bd4fc750380bc51b76c&page=1&limit=10')
+            await axios.get(getTeamsUrl(walletAddress))
             .then(response => {
                 teamData = response.data.result.data
             })
@@ -46,8 +42,8 @@ async function main() {
                     const miningTrans = await gameContract.startGame(team.team_id)
                     miningTrans.wait()
                     console.log("mining successful for team: " + team.team_id)
-                } else if((team.game_round == 0 && team.process_status == "attack") || team.game_round == 2) {
-                    await axios.get('https://idle-api.crabada.com/public/idle/crabadas/lending?orderBy=price&order=asc&page=1&limit=10')
+                } else if((team.game_round == 0 && team.process_status == "attack") || team.game_round == 2) { // Team requires reinforcing
+                    await axios.get(tavernUrl)
                     .then(response => {
                         tavernData = response.data.result.data
                     })
@@ -58,7 +54,7 @@ async function main() {
                         reinforceTrans.wait()
                         console.log("reinforce successful for team: " + team.team_id)
                     }
-                } else if(team.process_status == "settle" && team.game_end_time && lastTimestamp > team.game_end_time) {
+                } else if(team.game_end_time && lastTimestamp > team.game_end_time) { // Game is done and needs to be closed
                     console.log("game done, closing")
                     const closingTrans = await gameContract.closeGame(team.game_id)
                     closingTrans.wait()
