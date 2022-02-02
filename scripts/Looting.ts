@@ -9,8 +9,9 @@ import {
 import {
     TeamData,
     TavernData,
+    LootingData,
     getTeamsUrl,
-    tavernUrlCheapest,
+    tavernUrlBigLimit,
     lootingUrl
 } from "./CrabadaApi"
 
@@ -23,7 +24,8 @@ async function main() {
 
     let teamData: TeamData[] = []
     let tavernData: TavernData[] = []
-    let tavernPriceLimit = BigInt(30000000000000000000) // 30 tus. 18 decimals
+    let LootingData: LootingData[] = []
+    let tavernPriceLimit = BigInt(35000000000000000000) // 35 tus. 18 decimals
 
     while(true) {
         try
@@ -38,26 +40,46 @@ async function main() {
             })
 
             await teamData.forEach(async team => {
-                if(team.status == "AVAILABLE") { // Team is doing jack shit, get to work
-                    console.log("attempting to mine for team: " + team.team_id)
-                    const miningTrans = await gameContract.startGame(team.team_id)
-                    miningTrans.wait()
-                    console.log("mining successful for team: " + team.team_id)
-                } else if((team.game_round == 0 && team.process_status == "attack") || team.game_round == 2) { // Team requires reinforcing
-                    await axios.get(tavernUrlCheapest)
+                if(team.status == "AVAILABLE") { // Team is doing jack shit, go loot some fuckers
+                    console.log("searching for a team to loot for team: " + team.team_id)
+
+                    let looted = false;
+                    while(!looted) {
+                        await axios.get(lootingUrl)
+                        .then(response => {
+                            LootingData = response.data.result.data
+                        })
+
+                        for(let i=0; i<LootingData.length; i++) {
+                            if(team.battle_point > LootingData[i].defence_point) {
+                                const lootingTrans = await gameContract.attack(LootingData[i].game_id, team.team_id)
+                                lootingTrans.wait()
+                                looted = true
+                                break
+                            }
+                        }
+
+                        await sleep(1000); // sleep 1 seconds. Then refresh mines and look for loot again.
+                    }
+                    
+                    console.log("looting successful for team: " + team.team_id)
+                } else if(team.game_round == 1 || team.game_round == 3) { // Team requires reinforcing
+                    await axios.get(tavernUrlBigLimit)
                     .then(response => {
                         tavernData = response.data.result.data
                     })
 
-                    if(tavernData[1].price < tavernPriceLimit) {
-                        console.log("attempting to reinforce for team: " + team.team_id)
-                        const reinforceTrans = await gameContract.reinforceDefense(team.game_id, tavernData[1].crabada_id, tavernData[1].price.toString())
-                        reinforceTrans.wait()
-                        console.log("reinforce successful for team: " + team.team_id)
+                    for(let i=0; i<tavernData.length; i++) {
+                        if(tavernData[i].price < tavernPriceLimit && true) { //REVISE THIS TO DO MATHS ON WHAT POWER I NEED
+                            console.log("attempting to reinforce for team: " + team.team_id)
+                            const reinforceTrans = await gameContract.reinforceDefense(team.game_id, tavernData[i].crabada_id, tavernData[i].price.toString())
+                            reinforceTrans.wait()
+                            console.log("reinforce successful for team: " + team.team_id)
+                        }
                     }
                 } else if(team.game_end_time && lastTimestamp > team.game_end_time) { // Game is done and needs to be closed
                     console.log("game done, closing")
-                    const closingTrans = await gameContract.closeGame(team.game_id)
+                    const closingTrans = await gameContract.closeGame(team.game_id) // MIGHT BE DIFFERENT FOR LOOTING TEST THIS
                     closingTrans.wait()
                     console.log("closed")
                 }

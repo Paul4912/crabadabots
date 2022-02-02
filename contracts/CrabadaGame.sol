@@ -9,4 +9,6 @@ interface CrabadaGame {
     function closeGame(uint256 gameId) external;
 
     function reinforceDefense(uint256 gameId, uint256 crabadaId, uint256 borrowPrice) external;
+
+    function attack(uint256 gameId, uint256 attackTeamId) external;
 }
