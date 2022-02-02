@@ -1,57 +1,80 @@
 import { ethers } from "hardhat"
 import axios from "axios"
 import {
-    CrabadaMining,
-    CrabadaMining__factory
+    CrabadaGame,
+    CrabadaGame__factory
 } from "../typechain"
 
-type mineData = {
-    game_id: number,
-    end_time: number,
+type teamData = {
     team_id: number,
+    game_id: number,
+    game_end_time: number,
+    game_round: number,
+    process_status: string,
     status: string
+}
+
+type tavernData = {
+    crabada_id: number,
+    price: BigInt
 }
 
 async function main() {
     const [myWallet, ...accounts] = await ethers.getSigners()
-    const mineAddress = "0x82a85407BD612f52577909F4A58bfC6873f14DA8"
-    const miningContract = new ethers.Contract(mineAddress, CrabadaMining__factory.abi).connect(myWallet) as CrabadaMining
+    const gameAddress = "0x82a85407BD612f52577909F4A58bfC6873f14DA8"
+    const gameContract = new ethers.Contract(gameAddress, CrabadaGame__factory.abi).connect(myWallet) as CrabadaGame
 
-    let mineData: mineData[] = []
+    let teamData: teamData[] = []
+    let tavernData: tavernData[] = []
+    let tavernPriceLimit = BigInt(30000000000000000000) // 30 tus. 18 decimals
 
     while(true) {
         try
         {
-            await axios.get('https://idle-api.crabada.com/public/idle/mines?user_address=0x4f99949cc732f6c19ca58bd4fc750380bc51b76c&page=1&status=open&limit=8')
+            const blockNumBefore = await ethers.provider.getBlockNumber();
+            const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+            const lastTimestamp = blockBefore.timestamp;
+
+            await axios.get('https://idle-api.crabada.com/public/idle/teams?user_address=0x4f99949cc732f6c19ca58bd4fc750380bc51b76c&page=1&limit=10')
             .then(response => {
-                mineData = response.data.result
+                teamData = response.data.result.data
             })
+
+            await teamData.forEach(async team => {
+                if(team.status == "AVAILABLE") { // Team is doing jack shit, get to work
+                    console.log("attempting to mine for team: " + team.team_id)
+                    const miningTrans = await gameContract.startGame(team.team_id)
+                    miningTrans.wait()
+                    console.log("mining successful for team: " + team.team_id)
+                } else if((team.game_round == 0 && team.process_status == "attack") || team.game_round == 2) {
+                    await axios.get('https://idle-api.crabada.com/public/idle/crabadas/lending?orderBy=price&order=asc&page=1&limit=10')
+                    .then(response => {
+                        tavernData = response.data.result.data
+                    })
+
+                    if(tavernData[1].price < tavernPriceLimit) {
+                        console.log("attempting to reinforce for team: " + team.team_id)
+                        const reinforceTrans = await gameContract.reinforceDefense(team.game_id, tavernData[1].crabada_id, tavernData[1].price.toString())
+                        reinforceTrans.wait()
+                        console.log("reinforce successful for team: " + team.team_id)
+                    }
+                } else if(team.process_status == "settle" && team.game_end_time && lastTimestamp > team.game_end_time) {
+                    console.log("game done, closing")
+                    const closingTrans = await gameContract.closeGame(team.game_id)
+                    closingTrans.wait()
+                    console.log("closed")
+                }
+            })
+
+            console.log("things seem all gucci, waiting 1 minute before checking if actions required")
+            await sleep(60000); // sleep the remainder add a buffer of 60 seconds
         }
         catch(exception)
         {
+            console.log(exception)
+            console.log("error while mining trying again in 1 minute")
+            await sleep(60000); // sleep 60 seconds.
             continue // any errors try again
-        }
-
-        if(mineData.length == 0) { // if nothing mining get to work
-            try
-            {
-                const miningTrans = await miningContract.startGame('729')
-                miningTrans.wait()
-
-                await sleep(14460000); // sleep for 4 hours and 1 minutes.
-            }
-            catch(exception)
-            {
-                continue // any errors try again
-            }
-        } else {
-            if(mineData[0].status == "closed") { //if game closable, close it
-                const closingTrans = await miningContract.closeGame(mineData[0].game_id)
-                closingTrans.wait()
-            } else { // If somehow not closable yet wait the remaining time
-                let remainder = mineData[0].end_time - Date.now()
-                await sleep((remainder + 30) * 1000); // sleep the remainder add a buffer of 30 seconds
-            }
         }
     }
 }
