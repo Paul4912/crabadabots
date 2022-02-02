@@ -10,7 +10,8 @@ export type TeamData = {
 
 export type TavernData = {
     crabada_id: number,
-    price: BigInt
+    price: BigInt,
+    battle_point: number
 }
 
 export type LootingData = {
@@ -18,7 +19,15 @@ export type LootingData = {
     defence_point: number,
 }
 
+export type ActiveGamesData = {
+    game_id: number,
+    round: number,
+    defence_point: number,
+    attack_point: number
+}
+
 export const getTeamsUrl = (address: string) => `https://idle-api.crabada.com/public/idle/teams?user_address=${address}&page=1&limit=10`
 export const tavernUrl = "https://idle-api.crabada.com/public/idle/crabadas/lending?orderBy=price&order=asc&page=1&limit=10"
 export const tavernUrlBigLimit = "https://idle-api.crabada.com/public/idle/crabadas/lending?orderBy=price&order=asc&page=1&limit=120"
 export const lootingUrl = "https://idle-api.crabada.com/public/idle/mines?page=1&status=open&looter_address=0x0000000000000000000000000000000000000000&can_loot=1&limit=8"
+export const getActiveGamesUrl = (address: string) => `https://idle-api.crabada.com/public/idle/mines?user_address=${address}&page=1&status=open&limit=8`

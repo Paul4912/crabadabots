@@ -10,9 +10,11 @@ import {
     TeamData,
     TavernData,
     LootingData,
+    ActiveGamesData,
     getTeamsUrl,
     tavernUrlBigLimit,
-    lootingUrl
+    lootingUrl,
+    getActiveGamesUrl
 } from "./CrabadaApi"
 
 
@@ -25,6 +27,7 @@ async function main() {
     let teamData: TeamData[] = []
     let tavernData: TavernData[] = []
     let LootingData: LootingData[] = []
+    let activesGamesData: ActiveGamesData[] = []
     let tavernPriceLimit = BigInt(35000000000000000000) // 35 tus. 18 decimals
 
     while(true) {
@@ -33,6 +36,29 @@ async function main() {
             const blockNumBefore = await ethers.provider.getBlockNumber();
             const blockBefore = await ethers.provider.getBlock(blockNumBefore);
             const lastTimestamp = blockBefore.timestamp;
+
+            await axios.get(getActiveGamesUrl(walletAddress))
+            .then(response => {
+                activesGamesData = response.data.result.data
+            })
+
+            await activesGamesData.forEach(async game => {
+                if(game.round == 1 || game.round == 3) { // Team requires reinforcing
+                    await axios.get(tavernUrlBigLimit)
+                    .then(response => {
+                        tavernData = response.data.result.data
+                    })
+
+                    for(let i=0; i<tavernData.length; i++) {
+                        if(game.attack_point + tavernData[i].battle_point > game.defence_point && tavernData[i].price < tavernPriceLimit) { 
+                            console.log("attempting to reinforce")
+                            const reinforceTrans = await gameContract.reinforceDefense(game.game_id, tavernData[i].crabada_id, tavernData[i].price.toString())
+                            reinforceTrans.wait()
+                            console.log("reinforce successful")
+                        }
+                    }
+                }
+            })
 
             await axios.get(getTeamsUrl(walletAddress))
             .then(response => {
@@ -63,20 +89,6 @@ async function main() {
                     }
                     
                     console.log("looting successful for team: " + team.team_id)
-                } else if(team.game_round == 1 || team.game_round == 3) { // Team requires reinforcing
-                    await axios.get(tavernUrlBigLimit)
-                    .then(response => {
-                        tavernData = response.data.result.data
-                    })
-
-                    for(let i=0; i<tavernData.length; i++) {
-                        if(tavernData[i].price < tavernPriceLimit && true) { //REVISE THIS TO DO MATHS ON WHAT POWER I NEED
-                            console.log("attempting to reinforce for team: " + team.team_id)
-                            const reinforceTrans = await gameContract.reinforceDefense(team.game_id, tavernData[i].crabada_id, tavernData[i].price.toString())
-                            reinforceTrans.wait()
-                            console.log("reinforce successful for team: " + team.team_id)
-                        }
-                    }
                 } else if(team.game_end_time && lastTimestamp > team.game_end_time) { // Game is done and needs to be closed
                     console.log("game done, closing")
                     const closingTrans = await gameContract.closeGame(team.game_id) // MIGHT BE DIFFERENT FOR LOOTING TEST THIS
