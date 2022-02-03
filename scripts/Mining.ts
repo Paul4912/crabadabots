@@ -36,11 +36,13 @@ async function main() {
                 teamData = response.data.result.data
             })
 
-            await teamData.forEach(async team => {
+            for(let i=0; i<teamData.length; i++) {
+                let team = teamData[i]
+
                 if(team.status == "AVAILABLE") { // Team is doing jack shit, get to work
                     console.log("attempting to mine for team: " + team.team_id)
                     const miningTrans = await gameContract.startGame(team.team_id)
-                    miningTrans.wait()
+                    await miningTrans.wait()
                     console.log("mining successful for team: " + team.team_id)
                 } else if((team.game_round == 0 && team.process_status == "attack") || team.game_round == 2) { // Team requires reinforcing
                     await axios.get(tavernUrl)
@@ -51,16 +53,16 @@ async function main() {
                     if(tavernData[1].price < tavernPriceLimit) {
                         console.log("attempting to reinforce for team: " + team.team_id)
                         const reinforceTrans = await gameContract.reinforceDefense(team.game_id, tavernData[1].crabada_id, tavernData[1].price.toString())
-                        reinforceTrans.wait()
+                        await reinforceTrans.wait()
                         console.log("reinforce successful for team: " + team.team_id)
                     }
                 } else if(team.game_end_time && lastTimestamp > team.game_end_time) { // Game is done and needs to be closed
                     console.log("game done, closing")
                     const closingTrans = await gameContract.closeGame(team.game_id)
-                    closingTrans.wait()
+                    await closingTrans.wait()
                     console.log("closed")
                 }
-            })
+            }
 
             console.log("things seem all gucci, waiting 1 minute before checking if actions required")
             await sleep(60000); // sleep the remainder add a buffer of 60 seconds

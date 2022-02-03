@@ -26,7 +26,7 @@ async function main() {
 
     let teamData: TeamData[] = []
     let tavernData: TavernData[] = []
-    let LootingData: LootingData[] = []
+    let lootingData: LootingData[] = []
     let activesGamesData: ActiveGamesData[] = []
     let tavernPriceLimit = BigInt(35000000000000000000) // 35 tus. 18 decimals
 
@@ -42,7 +42,9 @@ async function main() {
                 activesGamesData = response.data.result.data
             })
 
-            await activesGamesData.forEach(async game => {
+            for(let i=0; i<activesGamesData.length; i++) {
+                let game = activesGamesData[i]
+
                 if(game.round == 1 || game.round == 3) { // Team requires reinforcing
                     await axios.get(tavernUrlBigLimit)
                     .then(response => {
@@ -53,19 +55,21 @@ async function main() {
                         if(game.attack_point + tavernData[i].battle_point > game.defence_point && tavernData[i].price < tavernPriceLimit) { 
                             console.log("attempting to reinforce")
                             const reinforceTrans = await gameContract.reinforceDefense(game.game_id, tavernData[i].crabada_id, tavernData[i].price.toString())
-                            reinforceTrans.wait()
+                            await reinforceTrans.wait()
                             console.log("reinforce successful")
                         }
                     }
                 }
-            })
+            }
 
             await axios.get(getTeamsUrl(walletAddress))
             .then(response => {
                 teamData = response.data.result.data
             })
 
-            await teamData.forEach(async team => {
+            for(let i=0; i<teamData.length; i++) {
+                let team = teamData[i]
+
                 if(team.status == "AVAILABLE") { // Team is doing jack shit, go loot some fuckers
                     console.log("searching for a team to loot for team: " + team.team_id)
 
@@ -73,13 +77,13 @@ async function main() {
                     while(!looted) {
                         await axios.get(lootingUrl)
                         .then(response => {
-                            LootingData = response.data.result.data
+                            lootingData = response.data.result.data
                         })
 
-                        for(let i=0; i<LootingData.length; i++) {
-                            if(team.battle_point > LootingData[i].defence_point) {
-                                const lootingTrans = await gameContract.attack(LootingData[i].game_id, team.team_id)
-                                lootingTrans.wait()
+                        for(let i=0; i<lootingData.length; i++) {
+                            if(team.battle_point > lootingData[i].defence_point) {
+                                const lootingTrans = await gameContract.attack(lootingData[i].game_id, team.team_id)
+                                await lootingTrans.wait()
                                 looted = true
                                 break
                             }
@@ -92,10 +96,10 @@ async function main() {
                 } else if(team.game_end_time && lastTimestamp > team.game_end_time) { // Game is done and needs to be closed
                     console.log("game done, closing")
                     const closingTrans = await gameContract.closeGame(team.game_id) // MIGHT BE DIFFERENT FOR LOOTING TEST THIS
-                    closingTrans.wait()
+                    await closingTrans.wait()
                     console.log("closed")
                 }
-            })
+            }
 
             console.log("things seem all gucci, waiting 1 minute before checking if actions required")
             await sleep(60000); // sleep the remainder add a buffer of 60 seconds
