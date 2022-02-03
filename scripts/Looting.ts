@@ -89,7 +89,7 @@ async function main() {
                             }
                         }
 
-                        await sleep(1000); // sleep 0.1 seconds. Then refresh mines and look for loot again.
+                        await sleep(1000); // sleep 1 seconds. Then refresh mines and look for loot again.
                     }
                     
                     console.log("looting successful for team: " + team.team_id)
@@ -107,7 +107,7 @@ async function main() {
         catch(exception)
         {
             console.log(exception)
-            console.log("error while mining trying again in 1 minute")
+            console.log("error while looting trying again in 1 minute")
             await sleep(60000); // sleep 60 seconds.
             continue // any errors try again
         }
