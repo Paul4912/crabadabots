@@ -81,7 +81,7 @@ async function main() {
                         })
 
                         for(let i=0; i<lootingData.length; i++) {
-                            if(team.battle_point > lootingData[i].defence_point) {
+                            if(team.battle_point > lootingData[i].defense_point) {
                                 const lootingTrans = await gameContract.attack(lootingData[i].game_id, team.team_id)
                                 await lootingTrans.wait()
                                 looted = true
@@ -89,7 +89,7 @@ async function main() {
                             }
                         }
 
-                        await sleep(1000); // sleep 1 seconds. Then refresh mines and look for loot again.
+                        await sleep(1000); // sleep 0.1 seconds. Then refresh mines and look for loot again.
                     }
                     
                     console.log("looting successful for team: " + team.team_id)

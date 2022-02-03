@@ -16,7 +16,7 @@ export type TavernData = {
 
 export type LootingData = {
     game_id: number,
-    defence_point: number,
+    defense_point: number,
 }
 
 export type ActiveGamesData = {
