@@ -20,7 +20,6 @@ const config: HardhatUserConfig = {
         avalanche: {
             url: ALCHEMY_API_MAINNET_URL,
             accounts: [PRIVATE_KEY],
-            // gasMultiplier: 5
         },
         coverage: {
             url: "http://127.0.0.1:8555", // Coverage launches its own ganache-cli client

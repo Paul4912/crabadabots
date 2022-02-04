@@ -64,7 +64,7 @@ async function main() {
                 }
             }
 
-            console.log("things seem all gucci, waiting 1 minute before checking if actions required")
+            console.log("things seem all gucci, waiting 1 minute before checking if actions required " + getCurrentTime())
             await sleep(60000); // sleep the remainder add a buffer of 60 seconds
         }
         catch(exception)
@@ -79,6 +79,13 @@ async function main() {
 
 function sleep(milliseconds: number) {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
+}
+
+function getCurrentTime(): string {
+    let today = new Date();
+    let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
+    let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    return date+' '+time;
 }
 
 main()

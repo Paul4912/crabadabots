@@ -88,8 +88,6 @@ async function main() {
                                 break
                             }
                         }
-
-                        await sleep(1000); // sleep 1 seconds. Then refresh mines and look for loot again.
                     }
                     
                     console.log("looting successful for team: " + team.team_id)
