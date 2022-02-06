@@ -39,11 +39,11 @@ async function main() {
             for(let i=0; i<teamData.length; i++) {
                 let team = teamData[i]
 
-                if(team.status == "AVAILABLE") { // Team is doing jack shit, get to work
-                    console.log("attempting to mine for team: " + team.team_id)
-                    const miningTrans = await gameContract.startGame(team.team_id)
-                    await miningTrans.wait()
-                    console.log("mining successful for team: " + team.team_id)
+                if(team.game_end_time && lastTimestamp > team.game_end_time) { // Game is done and needs to be closed
+                    console.log("game done, closing")
+                    const closingTrans = await gameContract.closeGame(team.game_id)
+                    await closingTrans.wait()
+                    console.log("closed")
                 } else if((team.game_round == 0 && team.process_status == "attack") || team.game_round == 2) { // Team requires reinforcing
                     await axios.get(tavernUrl)
                     .then(response => {
@@ -63,11 +63,11 @@ async function main() {
                     await reinforceTrans.wait()
                     console.log(`Reinforced with crab id ${currentCrab.crabada_id}. BP: ${currentCrab.battle_point} MP: ${currentCrab.mine_point} Price: ${currentCrab.price}.`)
 
-                } else if(team.game_end_time && lastTimestamp > team.game_end_time) { // Game is done and needs to be closed
-                    console.log("game done, closing")
-                    const closingTrans = await gameContract.closeGame(team.game_id)
-                    await closingTrans.wait()
-                    console.log("closed")
+                } else if(team.status == "AVAILABLE") { // Team is doing jack shit, get to work
+                    console.log("attempting to mine for team: " + team.team_id)
+                    const miningTrans = await gameContract.startGame(team.team_id)
+                    await miningTrans.wait()
+                    console.log("mining successful for team: " + team.team_id)
                 }
             }
 
