@@ -50,12 +50,19 @@ async function main() {
                         tavernData = response.data.result.data
                     })
 
-                    if(tavernData[1].price < tavernPriceLimit) {
-                        console.log("attempting to reinforce for team: " + team.team_id)
-                        const reinforceTrans = await gameContract.reinforceDefense(team.game_id, tavernData[1].crabada_id, tavernData[1].price.toString())
-                        await reinforceTrans.wait()
-                        console.log("reinforce successful for team: " + team.team_id)
+                    console.log("attempting to reinforce for team: " + team.team_id)
+                    let currentCrab = tavernData[0]
+
+                    for(let i=1; i<tavernData.length; i++) {
+                        if(compareReinforce(currentCrab, tavernData[i])) {
+                            currentCrab = tavernData[i]
+                        }
                     }
+
+                    const reinforceTrans = await gameContract.reinforceDefense(team.game_id, currentCrab.crabada_id, currentCrab.price.toString())
+                    await reinforceTrans.wait()
+                    console.log(`Reinforced with crab id ${currentCrab.crabada_id}. BP: ${currentCrab.battle_point} MP: ${currentCrab.mine_point} Price: ${currentCrab.price}.`)
+
                 } else if(team.game_end_time && lastTimestamp > team.game_end_time) { // Game is done and needs to be closed
                     console.log("game done, closing")
                     const closingTrans = await gameContract.closeGame(team.game_id)
@@ -86,6 +93,20 @@ function getCurrentTime(): string {
     let date = today.getFullYear()+'-'+(today.getMonth()+1)+'-'+today.getDate();
     let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
     return date+' '+time;
+}
+
+function compareReinforce(currentCrab: TavernData, nextCrab: TavernData): boolean {
+    if(nextCrab.mine_point > currentCrab.mine_point) {
+        let mpDifference = nextCrab.mine_point - currentCrab.mine_point
+        let adjustedMPDifference = ethers.utils.parseEther(mpDifference.toString()).toBigInt()
+        let priceDifference = (nextCrab.price - currentCrab.price)
+
+        if(adjustedMPDifference*BigInt(2) > priceDifference) {
+            return true
+        }
+    }
+
+    return false
 }
 
 main()
