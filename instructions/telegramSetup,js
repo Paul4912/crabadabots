@@ -1,0 +1,45 @@
+/**
+ * Step 1: https://javascript.plainenglish.io/nodejs-telegram-bot-5e372f67f57
+ * First, we need to register our bot. We can do that in the Telegram app by contacting BotFather.
+ * Just type “botfather” in the search box, and choose the suggestion with the blue tick.
+ * Just click on “start” in the chat and go through the options. You only need to choose a name and a username — then you can save the key. Please keep it secret.
+ * You can already find your bot in the Telegram search. Look for
+ * “@<bot-username>” 
+ * 
+ * Step 2:
+ * Save the telegram key in your .env TELEGRAM_API_KEY: <Api_Key> and put API_KEY below script
+ * 
+ * Step 3:
+ * Run 'node telegramSetup.js' in command line and send a message in your telegram chat so the chatId will be sent back to you
+ * 
+ * Step 4:
+ * Put Chat ID in .env file TELEGRAM_CHAT_ID=<here> and set TELEGRAM_ON="true"
+ * 
+ * Step 5:
+ * Doneskies
+ */
+
+//PUT TELEGRAM API KEY HERE AND DELETE AFTER YOU GET YOUR CHAT ID
+const API_KEY = ''
+const TelegramBot = require("node-telegram-bot-api");
+
+class NotificationService{
+  service;
+
+  constructor() {
+      this.service = new TelegramBot(API_KEY, {
+        polling: true,
+      });
+  }
+
+  getChatId() {
+    this.service.on('message', (msg, match) => {
+      const chatId = msg.chat.id
+      this.service.sendMessage(chatId, `chat id: ${chatId}`);
+    })
+  }
+}
+
+const bot = new NotificationService();
+
+bot.getChatId();
