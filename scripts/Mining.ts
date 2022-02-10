@@ -12,7 +12,8 @@ import {
     getTeamsUrl,
     tavernUrl
 } from "./CrabadaApi"
-
+import NotificationService from './NotificationService';
+import CrabWallet from "./CrabWallet"
 
 async function main() {
     const [myWallet, ...accounts] = await ethers.getSigners()
@@ -20,6 +21,8 @@ async function main() {
     const walletAddress = process.env.ADDRESS ? process.env.ADDRESS : ''
     const gameContract = new ethers.Contract(gameAddress, CrabadaGame__factory.abi).connect(myWallet) as CrabadaGame
 
+    const crabWallet = new CrabWallet(myWallet);
+  
     let teamData: TeamData[] = []
     let tavernData: TavernData[] = []
     let tavernPriceLimit = BigInt(30000000000000000000) // 30 tus. 18 decimals
@@ -43,6 +46,12 @@ async function main() {
                     console.log("game done, closing")
                     const closingTrans = await gameContract.closeGame(team.game_id)
                     await closingTrans.wait()
+
+                    if(NotificationService.on) {
+                        const balanceText = await crabWallet.getStringBalance()
+                        await NotificationService.send(`Mined Successful for team ${team.team_id}\n\n` + balanceText)
+                    }
+
                     console.log("closed")
                 } else if((team.game_round == 0 && team.process_status == "attack") || team.game_round == 2) { // Team requires reinforcing
                     await axios.get(tavernUrl)

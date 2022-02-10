@@ -14,7 +14,7 @@ const PRIVATE_KEY =
 const config: HardhatUserConfig = {
     defaultNetwork: "hardhat",
     solidity: {
-        compilers: [{ version: "0.8.0", settings: {} }],
+        compilers: [{ version: "0.8.0", settings: {} },{ version: "0.6.12", settings: {} }],
     },
     networks: {
         avalanche: {
