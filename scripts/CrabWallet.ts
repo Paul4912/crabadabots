@@ -22,6 +22,7 @@ class CrabWallet {
   private readonly tusWavaxLPContract: JoePair;
   private readonly craContract: CRAContract;
   private readonly craWavaxLPContract: JoePair;
+  private readonly crabWallet: SignerWithAddress;
 
   constructor(myWallet: SignerWithAddress) {
     	this.wavaxMIMLPContract = new ethers.Contract(WAVAX_MIM_LP_ADDRESS, JoePair__factory.abi).connect(myWallet) as JoePair;
@@ -29,12 +30,10 @@ class CrabWallet {
       this.tusWavaxLPContract = new ethers.Contract(TUS_WAVAX_LP_ADDRESS, JoePair__factory.abi).connect(myWallet) as JoePair;
       this.craContract = new ethers.Contract(CRA_CONTRACT_ADDRESS, CRAContract__factory.abi).connect(myWallet) as CRAContract;
       this.craWavaxLPContract = new ethers.Contract(CRA_WAVAX_LP_ADDRESS, JoePair__factory.abi).connect(myWallet) as JoePair;
+      this.crabWallet = myWallet;
   }
 
-  async getCRABalance(): Promise<TokenBalance> {
-    const [mimReserves, wavaxReservesForMim] = await this.wavaxMIMLPContract.getReserves();
-    const mimPerWavax = mimReserves.div(wavaxReservesForMim).toNumber();
-    
+  async getCRABalance(mimPerWavax: number): Promise<TokenBalance> {
     const [craReserves, wavaxReservesForCRA] = await this.craWavaxLPContract.getReserves();
     
     const craPricePerWavax = craReserves.div(wavaxReservesForCRA).toNumber();
@@ -50,10 +49,7 @@ class CrabWallet {
     }
   }
 
-  async getTUSBalance(): Promise<TokenBalance> {
-    const [mimReserves, wavaxReservesForMim] = await this.wavaxMIMLPContract.getReserves();
-    const mimPerWavax = mimReserves.div(wavaxReservesForMim).toNumber();
-    
+  async getTUSBalance(mimPerWavax: number): Promise<TokenBalance> {
     const [wavaxReservesForTUS, tusReserves] = await this.tusWavaxLPContract.getReserves();
     
     const tusPricePerWavax = tusReserves.div(wavaxReservesForTUS).toNumber();
@@ -69,11 +65,34 @@ class CrabWallet {
     }
   }
 
-  async getStringBalance(): Promise<string> {
-    const tusBalance = await this.getTUSBalance();
-    const craBalance = await this.getCRABalance();
+  async getAvaxBalance(mimPerWavax: number): Promise<TokenBalance> {
+    const avaxBalance = await this.crabWallet.getBalance();
+    const formattedAvax = ethers.utils.formatEther(avaxBalance);
 
-    return `Spot Prices\nTUS: $${tusBalance.USDPerToken}\nCRA: $${craBalance.USDPerToken}\n\nWallet Balance\n${tusBalance.balance} TUS | $${tusBalance.balanceInUSD}\n${craBalance.balance} CRA | $${craBalance.balanceInUSD}\n\n`
+    return {
+      balance: Number(formattedAvax).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}),
+      balanceInUSD: (mimPerWavax*parseInt(formattedAvax)).toLocaleString(undefined, {minimumFractionDigits: 2,maximumFractionDigits: 2}),
+      USDPerToken: mimPerWavax.toFixed(3),
+    }
+  }
+
+  async getStringBalance(): Promise<string> {
+    console.log('Attempting to get balances')
+
+    const [mimReserves, wavaxReservesForMim] = await this.wavaxMIMLPContract.getReserves();
+    const mimPerWavax = mimReserves.div(wavaxReservesForMim).toNumber();
+
+    const result = await Promise.all([
+      this.getTUSBalance(mimPerWavax),
+      this.getCRABalance(mimPerWavax), 
+      this.getAvaxBalance(mimPerWavax)])
+
+    const tusBalance = result[0];
+    const craBalance = result[1];
+    const avaxBalance = result[2];
+    
+    console.log('Successfully retrieved balances')
+    return `Spot Prices\nTUS: $${tusBalance.USDPerToken}\nCRA: $${craBalance.USDPerToken}\nAvax: $${avaxBalance.USDPerToken}\n\nWallet Balance\n${tusBalance.balance} TUS | $${tusBalance.balanceInUSD}\n${craBalance.balance} CRA | $${craBalance.balanceInUSD}\n${avaxBalance.balance} Avax | $${avaxBalance.balanceInUSD}\n\n`
   }
 }
 

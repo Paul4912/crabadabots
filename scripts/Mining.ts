@@ -22,7 +22,7 @@ async function main() {
     const gameContract = new ethers.Contract(gameAddress, CrabadaGame__factory.abi).connect(myWallet) as CrabadaGame
 
     const crabWallet = new CrabWallet(myWallet);
-  
+
     let teamData: TeamData[] = []
     let tavernData: TavernData[] = []
     let tavernPriceLimit = BigInt(30000000000000000000) // 30 tus. 18 decimals
