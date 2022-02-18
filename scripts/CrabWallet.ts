@@ -44,7 +44,7 @@ class CrabWallet {
 
     return {
       balance: Number(formattedCRABalance).toLocaleString(undefined, {minimumFractionDigits: 2,maximumFractionDigits: 2}),
-      balanceInUSD: (craPricePerMim*parseInt(formattedCRABalance)).toLocaleString(undefined, {minimumFractionDigits: 2,maximumFractionDigits: 2}),
+      balanceInUSD: (craPricePerMim*parseFloat(formattedCRABalance)).toLocaleString(undefined, {minimumFractionDigits: 2,maximumFractionDigits: 2}),
       USDPerToken:  craPricePerMim.toFixed(3),
     }
   }
@@ -60,7 +60,7 @@ class CrabWallet {
 
     return {
       balance: Number(formattedTUSBalance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}),
-      balanceInUSD: (tusPricePerMim*parseInt(formattedTUSBalance)).toLocaleString(undefined, {minimumFractionDigits: 2,maximumFractionDigits: 2}),
+      balanceInUSD: (tusPricePerMim*parseFloat(formattedTUSBalance)).toLocaleString(undefined, {minimumFractionDigits: 2,maximumFractionDigits: 2}),
       USDPerToken: tusPricePerMim.toFixed(3),
     }
   }
@@ -71,7 +71,7 @@ class CrabWallet {
 
     return {
       balance: Number(formattedAvax).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}),
-      balanceInUSD: (mimPerWavax*parseInt(formattedAvax)).toLocaleString(undefined, {minimumFractionDigits: 2,maximumFractionDigits: 2}),
+      balanceInUSD: (mimPerWavax*parseFloat(formattedAvax)).toLocaleString(undefined, {minimumFractionDigits: 2,maximumFractionDigits: 2}),
       USDPerToken: mimPerWavax.toFixed(3),
     }
   }

@@ -15,6 +15,9 @@ import {
 import NotificationService from './NotificationService';
 import CrabWallet from "./CrabWallet"
 
+//ADD TEAM_IDS WHICH YOU WANT TO MINE
+const MINING_TEAMS: number[] = [];
+
 async function main() {
     const [myWallet, ...accounts] = await ethers.getSigners()
     const gameAddress = "0x82a85407BD612f52577909F4A58bfC6873f14DA8"
@@ -36,7 +39,7 @@ async function main() {
 
             await axios.get(getTeamsUrl(walletAddress))
             .then(response => {
-                teamData = response.data.result.data
+                teamData = response.data.result.data.filter((t: TeamData) => MINING_TEAMS.includes(t.team_id));
             })
 
             for(let i=0; i<teamData.length; i++) {
