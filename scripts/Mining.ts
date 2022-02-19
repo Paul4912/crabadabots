@@ -10,7 +10,9 @@ import {
     TeamData,
     TavernData,
     getTeamsUrl,
-    tavernUrl
+    tavernUrl,
+    MineData,
+    getMinesUrl
 } from "./CrabadaApi"
 import NotificationService from './NotificationService';
 import CrabWallet from "./CrabWallet"
@@ -25,6 +27,7 @@ async function main() {
 
     let teamData: TeamData[] = []
     let tavernData: TavernData[] = []
+    let minesData: MineData[] = []
     let tavernPriceLimit = BigInt(30000000000000000000) // 30 tus. 18 decimals
 
     while(true) {
@@ -34,32 +37,37 @@ async function main() {
             const blockBefore = await ethers.provider.getBlock(blockNumBefore);
             const lastTimestamp = blockBefore.timestamp;
 
-            await axios.get(getTeamsUrl(walletAddress))
+            await axios.get(getMinesUrl(walletAddress))
             .then(response => {
-                teamData = response.data.result.data
+                minesData = response.data.result.data
             })
 
-            for(let i=0; i<teamData.length; i++) {
-                let team = teamData[i]
+            for(let i=0; i<minesData.length; i++) {
+                
+                let mine = minesData[i]
+                let latestAction = mine.process[mine.process.length - 1]
 
-                if(team.game_end_time && lastTimestamp > team.game_end_time) { // Game is done and needs to be closed
+                if(mine.end_time && lastTimestamp > mine.end_time) { // Game is done and needs to be closed
                     console.log("game done, closing")
-                    const closingTrans = await gameContract.closeGame(team.game_id)
+                    const closingTrans = await gameContract.closeGame(mine.game_id)
                     await closingTrans.wait()
 
                     if(NotificationService.on) {
                         const balanceText = await crabWallet.getStringBalance()
-                        await NotificationService.send(`Mined Successful for team ${team.team_id}\n\n` + balanceText)
+                        await NotificationService.send(`Mined Successful for team ${mine.team_id}\n\n` + balanceText)
                     }
 
                     console.log("closed")
-                } else if((team.game_round == 0 && team.process_status == "attack") || team.game_round == 2) { // Team requires reinforcing
+                } else if((mine.process.length == 2 || mine.process.length == 4) // when getting attacked
+                       && lastTimestamp - latestAction.transaction_time < 60*30 // still within 30 minute reinforce window
+                       && mine.attack_point > mine.defence_point) { // attacking team is stronger than defending
+                    
                     await axios.get(tavernUrl)
                     .then(response => {
                         tavernData = response.data.result.data
                     })
 
-                    console.log("attempting to reinforce for team: " + team.team_id)
+                    console.log("attempting to reinforce for team: " + mine.team_id)
                     let currentCrab = tavernData[0]
 
                     for(let i=1; i<tavernData.length; i++) {
@@ -68,11 +76,21 @@ async function main() {
                         }
                     }
 
-                    const reinforceTrans = await gameContract.reinforceDefense(team.game_id, currentCrab.crabada_id, currentCrab.price.toString())
+                    const reinforceTrans = await gameContract.reinforceDefense(mine.game_id, currentCrab.crabada_id, currentCrab.price.toString())
                     await reinforceTrans.wait()
                     console.log(`Reinforced with crab id ${currentCrab.crabada_id}. BP: ${currentCrab.battle_point} MP: ${currentCrab.mine_point} Price: ${currentCrab.price}.`)
+                }
+            }
 
-                } else if(team.status == "AVAILABLE") { // Team is doing jack shit, get to work
+            await axios.get(getTeamsUrl(walletAddress))
+            .then(response => {
+                teamData = response.data.result.data
+            })
+
+            for(let i=0; i<teamData.length; i++) {
+                let team = teamData[i]
+
+                if(team.status == "AVAILABLE") { // Team is doing jack shit, get to work
                     console.log("attempting to mine for team: " + team.team_id)
                     const miningTrans = await gameContract.startGame(team.team_id)
                     await miningTrans.wait()
