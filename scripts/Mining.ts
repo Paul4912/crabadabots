@@ -63,7 +63,7 @@ async function main() {
                     let currentCrab = tavernData[0]
 
                     for(let i=1; i<tavernData.length; i++) {
-                        if(compareReinforce(currentCrab, tavernData[i])) {
+                        if(compareReinforce(currentCrab, tavernData[i]) && tavernData[i].price < tavernPriceLimit) {
                             currentCrab = tavernData[i]
                         }
                     }
