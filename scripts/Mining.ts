@@ -58,7 +58,7 @@ async function main() {
                     }
 
                     console.log("closed")
-                } else if((mine.process.length == 2 || mine.process.length == 4) // when getting attacked
+                } else if((latestAction.action == 'attack' || (latestAction.action == 'reinforce-attack' && mine.process.length == 4)) // when getting attacked
                        && lastTimestamp - latestAction.transaction_time < 60*30 // still within 30 minute reinforce window
                        && mine.attack_point > mine.defence_point) { // attacking team is stronger than defending
                     
