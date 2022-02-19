@@ -14,7 +14,7 @@ export type MineData = {
     battle_point: number,
     end_time: number,
     attack_point: number,
-    defence_point: number,
+    defense_point: number,
     process: Process[]
 }
 
