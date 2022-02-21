@@ -5,7 +5,6 @@ import { HardhatUserConfig } from "hardhat/types"
 import "@nomiclabs/hardhat-waffle"
 import "@typechain/hardhat"
 
-const ALCHEMY_API_TESTNET_URL = process.env.ALCHEMY_API_TESTNET_URL || ""
 const ALCHEMY_API_MAINNET_URL = process.env.ALCHEMY_API_MAINNET_URL || ""
 const PRIVATE_KEY =
     process.env.PRIVATE_KEY ||
@@ -20,6 +19,10 @@ const config: HardhatUserConfig = {
         avalanche: {
             url: ALCHEMY_API_MAINNET_URL,
             accounts: [PRIVATE_KEY],
+            gas: 'auto',
+            gasPrice: 'auto'
+            // gas: 600000,
+            // gasPrice: 30 * 1000000000 //ONLY CHANGE THE FIRST PART TO MATCH nAVAX - https://snowtrace.io/gastracker
         },
         coverage: {
             url: "http://127.0.0.1:8555", // Coverage launches its own ganache-cli client

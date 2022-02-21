@@ -3,75 +3,84 @@ dotEnvConfig()
 import { ethers } from "hardhat"
 import axios from "axios"
 import {
-    CrabadaGame,
-    CrabadaGame__factory
-} from "../typechain"
-import {
     TeamData,
     TavernData,
     LootingData,
-    ActiveGamesData,
+    MineData
+} from "./models/data"
+import {
     getTeamsUrl,
     tavernUrlBigLimit,
     lootingUrl,
-    getActiveGamesUrl
-} from "./CrabadaApi"
+    getActiveGamesUrl,
+} from './CrabadaApi';
+import {Faction} from './models/enums'
+import LootingContract from "./contractWrappers/LootingContract"
+import TimeHelper from "./utils/timeHelper"
+import { isOurTeamStronger } from "./services/gameService"
+import Logger, { LogAction } from './utils/logger';
 
+//ADD TEAM_IDS WHICH YOU WANT TO LOOT
+const LOOTING_TEAMS: number[] = [];
 
 async function main() {
     const [myWallet, ...accounts] = await ethers.getSigners()
-    const gameAddress = "0x82a85407BD612f52577909F4A58bfC6873f14DA8"
     const walletAddress = process.env.ADDRESS ? process.env.ADDRESS : ''
-    const gameContract = new ethers.Contract(gameAddress, CrabadaGame__factory.abi).connect(myWallet) as CrabadaGame
 
+    const contract = new LootingContract(myWallet);
+    
     let teamData: TeamData[] = []
     let tavernData: TavernData[] = []
     let lootingData: LootingData[] = []
-    let activesGamesData: ActiveGamesData[] = []
-    let tavernPriceLimit = BigInt(35000000000000000000) // 35 tus. 18 decimals
+    let activeMinesData: MineData[] = []
+    let tavernPriceLimit = BigInt(30000000000000000000) // 35 tus. 18 decimals
 
     while(true) {
         try
         {
-            const blockNumBefore = await ethers.provider.getBlockNumber();
-            const blockBefore = await ethers.provider.getBlock(blockNumBefore);
-            const lastTimestamp = blockBefore.timestamp;
+            const lastTimestamp = await TimeHelper.getBlockTimestamp();
 
             await axios.get(getActiveGamesUrl(walletAddress))
             .then(response => {
-                activesGamesData = response.data.result.data
+                activeMinesData = response.data.result.data;
+                if(LOOTING_TEAMS.length) {
+                    activeMinesData = activeMinesData.filter((t:MineData) => LOOTING_TEAMS.includes(t.attack_team_id))
+                }
             })
 
-            for(let i=0; i<activesGamesData.length; i++) {
-                let game = activesGamesData[i]
+            for(let i=0; i<activeMinesData.length; i++) {
+                let mine = activeMinesData[i]
 
-                if(game.round == 1 || game.round == 3) { // Team requires reinforcing
+                if(contract.shouldReinforce(mine, lastTimestamp)) { // Team requires reinforcing
                     await axios.get(tavernUrlBigLimit)
                     .then(response => {
                         tavernData = response.data.result.data
                     })
 
                     for(let i=0; i<tavernData.length; i++) {
-                        if(game.attack_point + tavernData[i].battle_point > game.defence_point && tavernData[i].price < tavernPriceLimit) { 
-                            console.log("attempting to reinforce")
-                            const reinforceTrans = await gameContract.reinforceDefense(game.game_id, tavernData[i].crabada_id, tavernData[i].price.toString())
-                            await reinforceTrans.wait()
-                            console.log("reinforce successful")
+                        const toRentCrab = tavernData[i];
+                        //we hiring only pure bulks here to ensure victory
+                        if(toRentCrab.battle_point == 237 && toRentCrab.price < tavernPriceLimit) { 
+                            await contract.reinforceTeam(mine, toRentCrab);
                         }
                     }
+                }
+
+                if(contract.shouldClose(mine, lastTimestamp)) {
+                    contract.closeGame(mine);
                 }
             }
 
             await axios.get(getTeamsUrl(walletAddress))
             .then(response => {
-                teamData = response.data.result.data
+                teamData = response.data.result.data.filter((t: TeamData) => LOOTING_TEAMS.includes(t.team_id));
             })
 
             for(let i=0; i<teamData.length; i++) {
                 let team = teamData[i]
 
                 if(team.status == "AVAILABLE") { // Team is doing jack shit, go loot some fuckers
-                    console.log("searching for a team to loot for team: " + team.team_id)
+                    Logger.Log(LogAction.Info, "Searching for a team to loot for team: " + team.team_id)
 
                     let looted = false;
                     while(!looted) {
@@ -80,40 +89,43 @@ async function main() {
                             lootingData = response.data.result.data
                         })
 
-                        for(let i=0; i<lootingData.length; i++) {
-                            if(team.battle_point > lootingData[i].defense_point) {
-                                const lootingTrans = await gameContract.attack(lootingData[i].game_id, team.team_id)
-                                await lootingTrans.wait()
+                        //We going back of the list to front to avoid other bots
+                        for(let i=lootingData.length - 1; i>=0; i--) {
+                            if(shouldLoot(team, lootingData[i])) {
+                                await contract.startGame(lootingData[i].game_id, team.team_id);    
                                 looted = true
                                 break
                             }
                         }
                     }
                     
-                    console.log("looting successful for team: " + team.team_id)
-                } else if(team.game_end_time && lastTimestamp > team.game_end_time) { // Game is done and needs to be closed
-                    console.log("game done, closing")
-                    const closingTrans = await gameContract.closeGame(team.game_id) // MIGHT BE DIFFERENT FOR LOOTING TEST THIS
-                    await closingTrans.wait()
-                    console.log("closed")
+                    Logger.Log(LogAction.Success, "Success for team - " + team.team_id);
                 }
             }
 
-            console.log("things seem all gucci, waiting 1 minute before checking if actions required")
-            await sleep(60000); // sleep the remainder add a buffer of 60 seconds
+            Logger.Log(LogAction.Info, "Gucci...");
+            await TimeHelper.sleep(60000); // sleep the remainder add a buffer of 60 seconds
         }
-        catch(exception)
+        catch(exception: any)
         {
-            console.log(exception)
-            console.log("error while looting trying again in 1 minute")
-            await sleep(60000); // sleep 60 seconds.
+            Logger.Log(LogAction.Error, exception);
+            // await TimeHelper.sleep(30000); // sleep 60 seconds.
             continue // any errors try again
         }
     }
 }
 
-function sleep(milliseconds: number) {
-    return new Promise(resolve => setTimeout(resolve, milliseconds));
+function shouldLoot(ourTeam: TeamData, theirTeam: LootingData) {
+    //Kevin's logic to my lux > ore with minimum miners revenge
+    if(ourTeam.faction === Faction.Lux) {
+        return theirTeam.faction === Faction.Ore;
+    } 
+
+    return isOurTeamStronger(
+        ourTeam.battle_point, 
+        ourTeam.faction, 
+        theirTeam.defense_point, 
+        theirTeam.faction)
 }
 
 main()
