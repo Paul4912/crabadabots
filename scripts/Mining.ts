@@ -20,7 +20,7 @@ import MiningContract from "./contractWrappers/MiningContract"
 import TimeHelper from "./utils/timeHelper";
 
 //ADD TEAM_IDS WHICH YOU WANT TO LOOT
-const MINING_TEAMS: number[] = [];
+const MINING_TEAMS: number[] = []
 
 async function main() {
     const [myWallet, ...accounts] = await ethers.getSigners()
@@ -56,7 +56,7 @@ async function main() {
                     await contract.closeGame(mine)
                 }
                 
-                if(contract.shouldReinforce(mineDetailData!, lastTimestamp)) { // attacking team is stronger than defending    
+                if(contract.shouldReinforce(mineDetailData, lastTimestamp)) { // attacking team is stronger than defending    
                     await axios.get(tavernUrl)
                     .then(response => {
                         tavernData = response.data.result.data
@@ -97,8 +97,6 @@ async function main() {
         catch(exception: any)
         {
             Logger.Log(LogAction.Error, exception);
-            Logger.Log(LogAction.Error, "Trying again in 1 minute")
-            await TimeHelper.sleep(60000); // sleep 60 seconds.
             continue // any errors try again
         }
     }
