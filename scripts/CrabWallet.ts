@@ -22,7 +22,7 @@ class CrabWallet {
   private readonly tusWavaxLPContract: JoePair;
   private readonly craContract: CRAContract;
   private readonly craWavaxLPContract: JoePair;
-  private readonly crabWallet: SignerWithAddress;
+  public readonly crabWallet: SignerWithAddress;
 
   constructor(myWallet: SignerWithAddress) {
     	this.wavaxMIMLPContract = new ethers.Contract(WAVAX_MIM_LP_ADDRESS, JoePair__factory.abi).connect(myWallet) as JoePair;
