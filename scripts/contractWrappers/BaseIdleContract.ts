@@ -66,7 +66,7 @@ abstract class BaseIdleContract {
 
     let gasPrice = gasPriceInWei.div(10**9).toNumber(); //gasPrice in nAvax
 
-    const limit = gasPriceLimit ?? Number.parseInt(process.env.GAS_PRICE_LIMIT ?? '100');
+    const limit = gasPriceLimit ?? Number.parseInt(process.env.GAS_PRICE_LIMIT ?? '150');
     
     if (gasPrice > limit)
     {

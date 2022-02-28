@@ -19,8 +19,7 @@ const config: HardhatUserConfig = {
         avalanche: {
             url: ALCHEMY_API_MAINNET_URL,
             accounts: [PRIVATE_KEY],
-            gas: 'auto',
-            gasPrice: 'auto'
+            gasMultiplier: 1.1
             // gas: 600000,
             // gasPrice: 30 * 1000000000 //ONLY CHANGE THE FIRST PART TO MATCH nAVAX - https://snowtrace.io/gastracker
         },
