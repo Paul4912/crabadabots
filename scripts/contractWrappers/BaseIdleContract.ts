@@ -75,6 +75,10 @@ abstract class BaseIdleContract {
         throw new Error(`Gas price ${gasPrice} | Gas Limit ${limit} too high - will try again later.`)
     }
   }
+
+  public async returnGasPrice() {
+    return await this.crabWallet.crabWallet.getGasPrice();
+  }
 }
 
 export default BaseIdleContract;

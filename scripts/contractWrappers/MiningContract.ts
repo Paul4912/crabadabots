@@ -12,18 +12,21 @@ class MiningContract extends BaseIdleContract {
   }
 
   protected async reinforce(gameId: number, reinforceCrab: TavernData): Promise<void> {
-    const reinforceTrans = await this.contract.reinforceDefense(gameId, reinforceCrab.crabada_id, reinforceCrab.price.toString());
+    let currentGasPrice = await this.returnGasPrice()
+    const reinforceTrans = await this.contract.reinforceDefense(gameId, reinforceCrab.crabada_id, reinforceCrab.price.toString(), {gasPrice: currentGasPrice.mul(1.1)});
     await reinforceTrans.wait(); 
   }
 
   protected async start(gameId: number, teamId: number): Promise<void> {
-    const miningTrans = await this.contract.startGame(teamId)
+    let currentGasPrice = await this.returnGasPrice()
+    const miningTrans = await this.contract.startGame(teamId, {gasPrice: currentGasPrice.mul(1.1)})
     await miningTrans.wait()
   }
 
   protected async close(gameId: number) {
-      const closingTrans = await this.contract.closeGame(gameId);
-      await closingTrans.wait();
+    let currentGasPrice = await this.returnGasPrice()
+    const closingTrans = await this.contract.closeGame(gameId, {gasPrice: currentGasPrice.mul(1.1)})
+    await closingTrans.wait();
   }
 
   public shouldReinforce<T extends MineData | MineDetailData>(mine: T, lastTimestamp: number): boolean {
