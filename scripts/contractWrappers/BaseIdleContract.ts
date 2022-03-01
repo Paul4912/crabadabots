@@ -58,7 +58,7 @@ abstract class BaseIdleContract {
 
     await TimeHelper.apiTimeout(this.reinforce(mine.game_id, reinforceCrab), 300000);
 
-    Logger.Log(LogAction.Success, `Reinforced with crab id ${reinforceCrab.crabada_id}. BP: ${reinforceCrab.battle_point} MP: ${reinforceCrab.mine_point} Price: ${reinforceCrab.price}.`)
+    Logger.Log(LogAction.Success, `Reinforced with crab id ${reinforceCrab.crabada_id}. BP: ${reinforceCrab.battle_point} MP: ${reinforceCrab.mine_point} Price: ${ethers.utils.formatEther(reinforceCrab.price)}.`)
   }
 
   public async sleepWhileGasPriceIsTooHigh(gasPriceLimit: number | undefined = undefined) {
