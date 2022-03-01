@@ -97,6 +97,8 @@ async function main() {
         catch(exception: any)
         {
             Logger.Log(LogAction.Error, exception);
+            Logger.Log(LogAction.Error, "Trying again in 10 seconds")
+            await TimeHelper.sleep(10000);
             continue // any errors try again
         }
     }
@@ -108,7 +110,7 @@ function compareReinforce(currentCrab: TavernData, nextCrab: TavernData): boolea
         let adjustedMPDifference = ethers.utils.parseEther(mpDifference.toString()).toBigInt()
         let priceDifference = (nextCrab.price - currentCrab.price)
 
-        if(adjustedMPDifference*BigInt(2) > priceDifference) {
+        if(adjustedMPDifference/BigInt(2) > priceDifference) {
             return true
         }
     }
