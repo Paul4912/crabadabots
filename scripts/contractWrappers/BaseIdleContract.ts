@@ -76,8 +76,9 @@ abstract class BaseIdleContract {
     }
   }
 
-  public async returnGasPrice() {
-    return await this.crabWallet.crabWallet.getGasPrice();
+  public async getRequiredTip() {
+    let feeData = await this.crabWallet.crabWallet.getFeeData()
+    return feeData.maxPriorityFeePerGas
   }
 }
 
