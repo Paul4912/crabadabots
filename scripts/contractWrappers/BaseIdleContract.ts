@@ -32,7 +32,7 @@ abstract class BaseIdleContract {
     await this.sleepWhileGasPriceIsTooHigh();
 
     Logger.Log(LogAction.Info, `Attempting to start game with team - ${teamId}`)
-    await TimeHelper.apiTimeout(this.start(gameId, teamId))
+    await TimeHelper.apiTimeout(this.start(gameId, teamId), 300000)
     Logger.Log(LogAction.Success,`Started game with team - ${teamId}`)
   }
 
@@ -41,7 +41,7 @@ abstract class BaseIdleContract {
 
       Logger.Log(LogAction.Info, `Attempting to close game - ${mine.game_id}`)
       
-      await TimeHelper.apiTimeout(this.close(mine.game_id));
+      await TimeHelper.apiTimeout(this.close(mine.game_id), 300000);
 
       if(NotificationService.on) {
           const balanceText = await this.crabWallet.getStringBalance()
@@ -56,7 +56,7 @@ abstract class BaseIdleContract {
 
     Logger.Log(LogAction.Info, `Attempting to reinforce team ${this.contractType === GameAction.Loot ? mine.attack_team_id : mine.team_id}`)
 
-    await TimeHelper.apiTimeout(this.reinforce(mine.game_id, reinforceCrab));
+    await TimeHelper.apiTimeout(this.reinforce(mine.game_id, reinforceCrab), 300000);
 
     Logger.Log(LogAction.Success, `Reinforced with crab id ${reinforceCrab.crabada_id}. BP: ${reinforceCrab.battle_point} MP: ${reinforceCrab.mine_point} Price: ${reinforceCrab.price}.`)
   }
