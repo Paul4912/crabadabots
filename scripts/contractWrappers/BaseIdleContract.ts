@@ -8,6 +8,7 @@ import NotificationService from "../services/notificationService";
 import TimeHelper from '../utils/timeHelper';
 import Logger, { LogAction } from '../utils/logger';
 import timeHelper from "../utils/timeHelper";
+import { BigNumber } from "ethers";
 
 abstract class BaseIdleContract {
 
@@ -78,7 +79,8 @@ abstract class BaseIdleContract {
 
   public async getRequiredTip() {
     let feeData = await this.crabWallet.crabWallet.getFeeData()
-    return feeData.maxPriorityFeePerGas
+    let tip = feeData.maxPriorityFeePerGas ?? BigNumber.from(2.5*1e9)
+    return {maxFeePerGas: BigNumber.from(150*1e9), maxPriorityFeePerGas: tip}
   }
 }
 

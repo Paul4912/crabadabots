@@ -12,20 +12,17 @@ class MiningContract extends BaseIdleContract {
   }
 
   protected async reinforce(gameId: number, reinforceCrab: TavernData): Promise<void> {
-    let requiredTip = await this.getRequiredTip() ?? undefined
-    const reinforceTrans = await this.contract.reinforceDefense(gameId, reinforceCrab.crabada_id, reinforceCrab.price.toString(), {maxPriorityFeePerGas: requiredTip});
+    const reinforceTrans = await this.contract.reinforceDefense(gameId, reinforceCrab.crabada_id, reinforceCrab.price.toString(), await this.getRequiredTip());
     await reinforceTrans.wait();
   }
 
   protected async start(gameId: number, teamId: number): Promise<void> {
-    let requiredTip = await this.getRequiredTip() ?? undefined
-    const miningTrans = await this.contract.startGame(teamId, {maxPriorityFeePerGas: requiredTip})
+    const miningTrans = await this.contract.startGame(teamId, await this.getRequiredTip())
     await miningTrans.wait()
   }
 
   protected async close(gameId: number) {
-    let requiredTip = await this.getRequiredTip() ?? undefined
-    const closingTrans = await this.contract.closeGame(gameId, {maxPriorityFeePerGas: requiredTip})
+    const closingTrans = await this.contract.closeGame(gameId, await this.getRequiredTip())
     await closingTrans.wait();
   }
 
