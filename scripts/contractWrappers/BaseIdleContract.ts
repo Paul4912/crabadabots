@@ -30,16 +30,12 @@ abstract class BaseIdleContract {
   }
 
   public async startGame(gameId:number, teamId: number) {
-    await this.sleepWhileGasPriceIsTooHigh();
-
     Logger.Log(LogAction.Info, `Attempting to start game with team - ${teamId}`)
     await TimeHelper.apiTimeout(this.start(gameId, teamId), 300000)
     Logger.Log(LogAction.Success,`Started game with team - ${teamId}`)
   }
 
   public async closeGame(mine: MineData) {
-      await this.sleepWhileGasPriceIsTooHigh();
-
       Logger.Log(LogAction.Info, `Attempting to close game - ${mine.game_id}`)
       
       await TimeHelper.apiTimeout(this.close(mine.game_id), 300000);
@@ -53,28 +49,11 @@ abstract class BaseIdleContract {
   }
 
   public async reinforceTeam(mine: MineData, reinforceCrab: TavernData) {
-    await this.sleepWhileGasPriceIsTooHigh();
-
     Logger.Log(LogAction.Info, `Attempting to reinforce team ${this.contractType === GameAction.Loot ? mine.attack_team_id : mine.team_id}`)
 
     await TimeHelper.apiTimeout(this.reinforce(mine.game_id, reinforceCrab), 300000);
 
-    Logger.Log(LogAction.Success, `Reinforced with crab id ${reinforceCrab.crabada_id}. BP: ${reinforceCrab.battle_point} MP: ${reinforceCrab.mine_point} Price: ${ethers.utils.formatEther(reinforceCrab.price)}.`)
-  }
-
-  public async sleepWhileGasPriceIsTooHigh(gasPriceLimit: number | undefined = undefined) {
-    const gasPriceInWei = await this.crabWallet.crabWallet.getGasPrice();
-
-    let gasPrice = gasPriceInWei.div(10**9).toNumber(); //gasPrice in nAvax
-
-    const limit = gasPriceLimit ?? Number.parseInt(process.env.GAS_PRICE_LIMIT ?? '150');
-    
-    if (gasPrice > limit)
-    {
-        Logger.Log(LogAction.Error, `Gas price ${gasPrice} | Gas Limit ${limit} too high - will try again later.`);
-        await timeHelper.sleep(60000*5); //sleep for 5 minutes;
-        throw new Error(`Gas price ${gasPrice} | Gas Limit ${limit} too high - will try again later.`)
-    }
+    Logger.Log(LogAction.Success, `Reinforced with crab id ${reinforceCrab.crabada_id}. BP: ${reinforceCrab.battle_point} MP: ${reinforceCrab.mine_point} Price: ${ethers.utils.formatEther(BigNumber.from(reinforceCrab.price))}.`)
   }
 
   public async getRequiredTip() {
