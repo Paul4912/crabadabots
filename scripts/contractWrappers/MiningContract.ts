@@ -6,27 +6,23 @@ import { isOurTeamStronger } from '../services/gameService';
 
 class MiningContract extends BaseIdleContract {
   contractType = GameAction.Mine;
-  private gasMultiplerNominator = process.env.GAS_MULTIPLER ?? '110';
 
   constructor(wallet: SignerWithAddress) {
     super(wallet)
   }
 
   protected async reinforce(gameId: number, reinforceCrab: TavernData): Promise<void> {
-    let adjustedGasPrice = (await this.returnGasPrice()).mul(this.gasMultiplerNominator).div('100')
-    const reinforceTrans = await this.contract.reinforceDefense(gameId, reinforceCrab.crabada_id, reinforceCrab.price.toString(), {gasPrice: adjustedGasPrice});
-    await reinforceTrans.wait(); 
+    const reinforceTrans = await this.contract.reinforceDefense(gameId, reinforceCrab.crabada_id, reinforceCrab.price.toString(), await this.getRequiredTip());
+    await reinforceTrans.wait();
   }
 
   protected async start(gameId: number, teamId: number): Promise<void> {
-    let adjustedGasPrice = (await this.returnGasPrice()).mul(this.gasMultiplerNominator).div('100')
-    const miningTrans = await this.contract.startGame(teamId, {gasPrice: adjustedGasPrice})
+    const miningTrans = await this.contract.startGame(teamId, await this.getRequiredTip())
     await miningTrans.wait()
   }
 
   protected async close(gameId: number) {
-    let adjustedGasPrice = (await this.returnGasPrice()).mul(this.gasMultiplerNominator).div('100')
-    const closingTrans = await this.contract.closeGame(gameId, {gasPrice: adjustedGasPrice})
+    const closingTrans = await this.contract.closeGame(gameId, await this.getRequiredTip())
     await closingTrans.wait();
   }
 
