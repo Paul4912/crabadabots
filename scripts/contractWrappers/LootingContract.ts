@@ -11,7 +11,7 @@ class LootingContract extends BaseIdleContract {
   }
 
   protected async reinforce(gameId: number, reinforceCrab: TavernData): Promise<void> {
-    const reinforceTrans = await this.contract.reinforceAttack(gameId, reinforceCrab.crabada_id, reinforceCrab.price.toString());
+    const reinforceTrans = await this.contract.reinforceAttack(gameId, reinforceCrab.crabada_id, reinforceCrab.price.toString(), await this.getRequiredTip());
     await reinforceTrans.wait();
   }
 
@@ -21,7 +21,7 @@ class LootingContract extends BaseIdleContract {
   }
 
   protected async close(gameId: number) {
-    const closingTrans = await this.contract.settleGame(gameId);
+    const closingTrans = await this.contract.settleGame(gameId, await this.getRequiredTip());
     await closingTrans.wait();
   }
 
@@ -34,10 +34,11 @@ class LootingContract extends BaseIdleContract {
     const lastAction = mine.process[mine.process.length - 1];
     
     // console.log(`Game ${mine.game_id} | last action ${lastAction.action} | settle time left ${lastTimestamp - lastAction.transaction_time - 3660}`)
-
+    const pastOneHour = mine.process[0].transaction_time + 3660;
     return (lastAction.action === 'reinforce-attack' 
       || lastAction.action === 'attack') //our turn
-      && lastTimestamp > (lastAction.transaction_time + 3660) //we can claim in 61mins if opponent hasn't made a move
+      && lastTimestamp > (lastAction.transaction_time + 1800)
+      && lastTimestamp > pastOneHour //we can claim if opponent hasnt made a move in 30mins and 1 hour past create game
   }
 }
 

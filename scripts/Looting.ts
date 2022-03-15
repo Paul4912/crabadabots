@@ -19,6 +19,7 @@ import LootingContract from "./contractWrappers/LootingContract"
 import TimeHelper from "./utils/timeHelper"
 import { isOurTeamStronger } from "./services/gameService"
 import Logger, { LogAction } from './utils/logger';
+import NotificationService from "./services/notificationService";
 
 //ADD TEAM_IDS WHICH YOU WANT TO LOOT
 const LOOTING_TEAMS: number[] = [];
@@ -67,39 +68,46 @@ async function main() {
                 }
 
                 if(contract.shouldClose(mine, lastTimestamp)) {
-                    contract.closeGame(mine);
+                    await contract.closeGame(mine);
                 }
             }
 
             await axios.get(getTeamsUrl(walletAddress))
             .then(response => {
-                teamData = response.data.result.data.filter((t: TeamData) => LOOTING_TEAMS.includes(t.team_id));
+                teamData = response.data.result.data;
+                if(LOOTING_TEAMS.length) {
+                    teamData = teamData.filter((t: TeamData) => LOOTING_TEAMS.includes(t.team_id));
+                }
             })
 
             for(let i=0; i<teamData.length; i++) {
                 let team = teamData[i]
 
                 if(team.status == "AVAILABLE") { // Team is doing jack shit, go loot some fuckers
-                    Logger.Log(LogAction.Info, "Searching for a team to loot for team: " + team.team_id)
-
-                    let looted = false;
-                    while(!looted) {
-                        await axios.get(lootingUrl)
-                        .then(response => {
-                            lootingData = response.data.result.data
-                        })
-
-                        //We going back of the list to front to avoid other bots
-                        for(let i=lootingData.length - 1; i>=0; i--) {
-                            if(shouldLoot(team, lootingData[i])) {
-                                await contract.startGame(lootingData[i].game_id, team.team_id);    
-                                looted = true
-                                break
-                            }
-                        }
+                     if(NotificationService.on) {
+                        await NotificationService.send(`Wallet Address\n${walletAddress}\n\nLooting available for team ${team.team_id}`)
                     }
+
+                    // Logger.Log(LogAction.Info, "Searching for a team to loot for team: " + team.team_id)
+
+                    // let looted = false;
+                    // while(!looted) {
+                    //     await axios.get(lootingUrl)
+                    //     .then(response => {
+                    //         lootingData = response.data.result.data
+                    //     })
+
+                    //     //We going back of the list to front to avoid other bots
+                    //     for(let i=lootingData.length - 1; i>=0; i--) {
+                    //         if(shouldLoot(team, lootingData[i])) {
+                    //             await contract.startGame(lootingData[i].game_id, team.team_id);    
+                    //             looted = true
+                    //             break
+                    //         }
+                    //     }
+                    // }
                     
-                    Logger.Log(LogAction.Success, "Success for team - " + team.team_id);
+                    // Logger.Log(LogAction.Success, "Success for team - " + team.team_id);
                 }
             }
 
