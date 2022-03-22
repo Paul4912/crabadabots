@@ -32,7 +32,7 @@ class MiningContract extends BaseIdleContract {
     let latestAction = mineDetail.process[mineDetail.process.length - 1]
     return (latestAction.action == 'attack' || (latestAction.action == 'reinforce-attack' && mineDetail.process.length == 4)) // when getting attacked
       && lastTimestamp - latestAction.transaction_time < 60*30 // still within 30 minute reinforce window
-      && lastTimestamp - latestAction.transaction_time > 60*25 // mine after x minutes
+      && lastTimestamp - latestAction.transaction_time > 60*15 // mine after x minutes
       && !isOurTeamStronger(mineDetail.defense_point, mineDetail.defense_team_faction, mineDetail.attack_point, mineDetail.attack_team_faction)
   }
 
