@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "mine": "npx hardhat run scripts/Mining.ts --network avalanche",
-    "loot": "npx hardhat run scripts/Looting.ts --network avalanche"
+    "mine": "npx hardhat run scripts/Mining.ts --network swimmer",
+    "loot": "npx hardhat run scripts/Looting.ts --network swimmer"
   },
   "repository": {
     "type": "git",

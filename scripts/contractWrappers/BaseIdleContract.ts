@@ -25,7 +25,7 @@ abstract class BaseIdleContract {
   protected contract: CrabadaGame;
   
   constructor(wallet: SignerWithAddress) { 
-    this.contract = new ethers.Contract("0x82a85407BD612f52577909F4A58bfC6873f14DA8", CrabadaGame__factory.abi).connect(wallet) as CrabadaGame;
+    this.contract = new ethers.Contract("0x9ab9e81Be39b73de3CCd9408862b1Fc6D2144d2B", CrabadaGame__factory.abi).connect(wallet) as CrabadaGame;
     this.crabWallet = new CrabWallet(wallet);
   }
 
@@ -56,11 +56,11 @@ abstract class BaseIdleContract {
     Logger.Log(LogAction.Success, `Reinforced with crab id ${reinforceCrab.crabada_id}. BP: ${reinforceCrab.battle_point} MP: ${reinforceCrab.mine_point} Price: ${ethers.utils.formatEther(BigNumber.from(reinforceCrab.price.toString()))}.`)
   }
 
-  public async getRequiredTip() {
-    let feeData = await this.crabWallet.crabWallet.getFeeData()
-    let tip = feeData.maxPriorityFeePerGas ?? BigNumber.from(2.5*1e9)
-    return {maxFeePerGas: BigNumber.from(150*1e9), maxPriorityFeePerGas: tip}
-  }
+  // public async getRequiredTip() {
+  //   let feeData = await this.crabWallet.crabWallet.getFeeData()
+  //   let tip = feeData.maxPriorityFeePerGas ?? BigNumber.from(2.5*1e9)
+  //   return {maxFeePerGas: BigNumber.from(150*1e9), maxPriorityFeePerGas: tip}
+  // }
 }
 
 export default BaseIdleContract;
