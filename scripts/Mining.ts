@@ -57,7 +57,7 @@ async function main() {
               currentCrab = tavernData[i];
             }
           }
-
+          
           await contract.reinforceTeam(mine, currentCrab);
         }
       }

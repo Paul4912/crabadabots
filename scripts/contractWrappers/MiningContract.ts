@@ -12,7 +12,7 @@ class MiningContract extends BaseIdleContract {
   }
 
   protected async reinforce(gameId: number, reinforceCrab: TavernData): Promise<void> {
-    const reinforceTrans = await this.contract.reinforceDefense(gameId, reinforceCrab.crabada_id, reinforceCrab.price.toString());
+    const reinforceTrans = await this.contract.reinforceDefense(gameId, reinforceCrab.crabada_id, reinforceCrab.price.toString(), { value: reinforceCrab.price.toString() });
     await reinforceTrans.wait();
   }
 
@@ -32,7 +32,7 @@ class MiningContract extends BaseIdleContract {
     let latestAction = mineDetail.process[mineDetail.process.length - 1]
     return (latestAction.action == 'attack' || (latestAction.action == 'reinforce-attack' && mineDetail.process.length == 4)) // when getting attacked
       && lastTimestamp - latestAction.transaction_time < 60*30 // still within 30 minute reinforce window
-      && lastTimestamp - latestAction.transaction_time > 60*15 // mine after x minutes
+      && lastTimestamp - latestAction.transaction_time > 60*15 // reinforce after x minutes
       && !isOurTeamStronger(mineDetail.defense_point, mineDetail.defense_team_faction, mineDetail.attack_point, mineDetail.attack_team_faction)
   }
 

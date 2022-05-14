@@ -10,7 +10,7 @@ interface CrabadaGame {
 
     function settleGame(uint256 gameId) external;
 
-    function reinforceDefense(uint256 gameId, uint256 crabadaId, uint256 borrowPrice) external;
+    function reinforceDefense(uint256 gameId, uint256 crabadaId, uint256 borrowPrice) external payable;
 
     function reinforceAttack(uint256 gameId, uint256 crabadaId, uint256 borrowPrice) external;
 
