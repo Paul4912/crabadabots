@@ -57,7 +57,7 @@ async function main() {
               currentCrab = tavernData[i];
             }
           }
-          
+
           await contract.reinforceTeam(mine, currentCrab);
         }
       }
@@ -73,7 +73,7 @@ async function main() {
       for (let i = 0; i < teamData.length; i++) {
         let team = teamData[i];
 
-        if (team.status == "AVAILABLE") {
+        if (team.status == "AVAILABLE" && team.crabada_id_1 && team.crabada_id_2 && team.crabada_id_3) {
           // Team is doing jack shit, get to work
           await contract.startGame(team.game_id, team.team_id);
         }

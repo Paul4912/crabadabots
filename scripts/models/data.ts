@@ -9,6 +9,9 @@ export type TeamData = {
     process_status: string,
     status: string,
     faction: Faction,
+    crabada_id_1: number,
+    crabada_id_2: number,
+    crabada_id_3: number
 }
 
 export type MineData = {
